@@ -1,322 +1,282 @@
-# 🚀 Projekt Modularnej Sieci Meshtastic: "Endgame Setup"
+# 🚀 Projekt Modularnej Sieci MeshCore/Meshtastic – „Endgame Setup v2”
 
 ## 📝 Koncepcja Systemu
-Projekt zakłada budowę dwóch zaawansowanych węzłów (nodów) sieci Meshtastic, opartych na ekosystemie **Seeed Studio XIAO**. System został zaprojektowany z myślą o maksymalnej elastyczności, energooszczędności i działaniu Off-Grid.
 
-1. **Node 1 (The Tank):** Stricte mobilny, oparty na energooszczędnym chipie nRF52840. Zbudowany do wielodniowej pracy w terenie z zasilaniem solarnym. Posiada wbudowany GPS.
-2. **Node 2 (The Chameleon):** Hybrydowy node domowo-terenowy oparty na ESP32-S3. Na co dzień pełni rolę stacjonarnej bramki z podłączeniem do domowego Wi-Fi (MQTT) oraz dużą anteną. W razie potrzeby (wyjście w teren, ewakuacja) moduł główny wraz z panelem solarnym jest wyciągany z obudowy balkonowej, zyskuje małą antenę i staje się drugim, pełnoprawnym trackerem mobilnym.
+Projekt zakłada budowę **dwóch węzłów** sieci MeshCore/Meshtastic opartych na ekosystemie **Seeed Studio XIAO**, z myślą o pracy Off‑Grid, minimalnym zużyciu energii i braku obsługi w trybie 24/7.
 
----
+1. **Node 1 – „Tank” (Mobilny):**
+   - Węzeł noszony/terenowy oparty na **XIAO nRF52840**.
+   - Ma **GPS L76K** do trackingu.
+   - Zasilany z baterii Li‑Po 1S ~4000 mAh z możliwością ładowania z **małego, odpinanego panelu solarnego**.
+   - Bez ekranu, bez Wi‑Fi/GSM, nastawiony na długi czas pracy (BLE + LoRa).
 
-## 📊 Szczegółowa Specyfikacja Sprzętowa (Hardware Specs)
-
-Poniżej znajdują się dokładne parametry techniczne podzespołów użytych do budowy obu węzłów.
-
-### 🧠 1. Mikrokontrolery (Płytki Główne)
-**A. Seeed Studio XIAO nRF52840 (Node 1 - Mobile)**
-*   **Procesor:** Nordic nRF52840, ARM Cortex-M4 32-bit @ 64 MHz
-*   **Pamięć:** 1MB Flash / 256KB RAM (+ dodatkowe 2MB QSPI Flash na pokładzie)
-*   **Łączność bezprzewodowa:** Bluetooth 5.0 (BLE), NFC, Zigbee
-*   **Pobór prądu (Deep Sleep):** ~5 μA (Absolutny lider energooszczędności)
-*   **Interfejsy:** 11x GPIO, I2C, SPI, UART
-*   **Wymiary:** 21 x 17.5 mm
-
-**B. Seeed Studio XIAO ESP32S3 (Node 2 - Balkon/Mobile)**
-*   **Procesor:** ESP32-S3R8, Dwurdzeniowy Xtensa LX7 @ 240 MHz
-*   **Pamięć:** 8MB PSRAM / 8MB Flash
-*   **Łączność bezprzewodowa:** 2.4GHz Wi-Fi, Bluetooth 5.0 (BLE)
-*   **Pobór prądu (Deep Sleep):** ~14 μA (Uwaga: podczas aktywnego Wi-Fi pobór wzrasta do 100+ mA)
-*   **Wymiary:** 21 x 17.5 mm
-
-### 📻 2. Moduł Radiowy (LoRa)
-**Wio-SX1262 LoRa Kit (dla XIAO)**
-*   **Chip radiowy:** Semtech SX1262 (Standard w nowoczesnym Meshtastic)
-*   **Częstotliwość pracy:** 868 MHz (Europa - EU_868) / 915 MHz (US)
-*   **Maksymalna moc wyjściowa (TX):** +22 dBm (Maksymalna dopuszczalna moc, świetny zasięg)
-*   **Czułość odbiornika (RX):** -137 dBm (dla SF12)
-*   **Komunikacja z płytką:** Magistrala SPI
-*   **Złącze antenowe:** u.FL (IPEX 1)
-
-### 🛰️ 3. Moduł Lokalizacji (GPS)
-**GNSS Quectel L76K add-on for XIAO**
-*   **Obsługiwane systemy:** Multi-constellation (GPS, GLONASS, BDS, QZSS)
-*   **Komunikacja z płytką:** I2C lub UART (konfigurowalne)
-*   **Zimny start (Cold Start):** < 30 sekund
-*   **Ciepły start (Hot Start):** < 2 sekundy (Bardzo szybki fix, jeśli ma podtrzymanie zasilania)
-*   **Wbudowana antena:** Ceramiczna (Patch Antenna) - musi być skierowana ku niebu w obudowie!
-
-### ⚡ 4. Zasilanie i Zarządzanie Energią
-**Moduł BQ25185 USB/DC/Solar Charger**
-*   **Układ główny:** Texas Instruments BQ25185
-*   **Napięcie wejściowe (VIN):** 5V z USB lub z Panelu Solarnego (Tolerancja do kilkunastu woltów, idealne dla skoków napięcia solara)
-*   **Zarządzanie ścieżką zasilania (Power Path):** Moduł potrafi jednocześnie zasilać płytkę XIAO i ładować baterię, płynnie przełączając źródła.
-*   **Prąd ładowania:** Regulowany, standardowo do 1A.
-*   **Wyjście (SYS OUT):** Dedykowane napięcie do zasilania logiki (3.3V / 5V).
-
-### 🔋 5. Bateria i Zasilanie Odnawialne
-*   **Bateria:** Akumulator Li-Po Akyga 3,7V / 4000mAh (Wymiary ok. 10x50x60mm). Posiada wbudowany układ PCM (zabezpieczenie przed przeładowaniem >4.2V i głębokim rozładowaniem <3.0V). Złącze JST-PH 2.0.
-*   **Panel Solarny:** Napięcie robocze ok. 5V - 6V, moc 1W - 3W (zależnie od obudowy). Wyposażony w kabel z uszczelnianym wtykiem JST lub gniazdem DC 5.5/2.1mm.
-
-### 📺 6. Wyświetlacz
-**Waveshare 0.96" OLED (24103)**
-*   **Rozdzielczość:** 128x64 piksele
-*   **Kolor matrycy:** Niebieski
-*   **Sterownik (Driver):** SSD1306
-*   **Komunikacja:** Magistrala I2C (Domyślny adres: 0x3C)
-*   **Zasilanie:** 3.3V - 5V (Niski pobór prądu, tylko świecące piksele zużywają energię).
+2. **Node 2 – „Repeater” (Stacjonarny 24/7):**
+   - Węzeł infrastrukturalny oparty również na **XIAO nRF52840**, zamontowany wysoko (np. dach wieżowca).
+   - Czysty **LoRa repeater** – bez GPS, bez ekranu, bez Wi‑Fi, bez GSM/MQTT.
+   - Zasilany z baterii Li‑Po 1S ~4000 mAh i **panelu 6 V 5–10 W** przez moduł **BQ25185** z buckiem 3.3 V.
+   - Zaprojektowany jako **bezobsługowy**, bez przerabiania na mobilny node.
 
 ---
 
-## 🎒 NODE 1: Stricte Mobilny (nRF52840)
-**Zastosowanie:** Wrzucasz do plecaka, przypinasz do roweru, zapominasz o nim.
-* **1x Płytka główna:** XIAO nRF52840
-* **1x Moduł LoRa:** Wio-SX1262
-* **1x Moduł GPS:** GNSS Quectel L76K
-* **1x Ładowarka:** BQ25185
-* **1x Bateria:** Li-Po 4000mAh
-* **1x Ekran:** OLED 0,96" Waveshare
-* **1x Panel Solarny:** Odpinany (Z wtyczką szybkozłączką)
-* **1x Antena:** Krótka antena mobilna (SMA) np. Gizont / Moxon.
+## 📊 Sprzęt – Specyfikacja
 
-## 🏠➡️🎒 NODE 2: Hybryda Balkon / Mobile (ESP32-S3)
-**Zastosowanie:** Na co dzień stacja domowa Wi-Fi, w razie potrzeby tracker plecakowy.
-* **1x Płytka główna:** XIAO ESP32S3
-* **1x Moduł LoRa:** Wio-SX1262
-* **1x Moduł GPS:** GNSS Quectel L76K
-* **1x Ładowarka:** BQ25185
-* **1x Bateria:** Li-Po 4000mAh
-* **1x Ekran:** OLED 0,96" Waveshare
-* **1x Panel Solarny:** Na balkonie, z możliwością wypięcia i zabrania w teren.
-* **1x Antena Balkonowa:** Duża z włókna szklanego (np. 4-8 dBi, strojona na 868MHz).
-* **1x Antena Mobilna:** Zapasowa (Gizont/Moxon) noszona w puszce ewakuacyjnej.
+### 🧠 1. Mikrokontroler (oba nody)
 
-### 🔄 Architektura "Matrioszki" (Transformacja Balkon -> Teren)
-1. **Moduł Wewnętrzny:** Szczelne pudełko zawierające elektronikę. Na obudowie gniazdo antenowe SMA(ż) oraz gniazdo zasilania solara.
-2. **Stacja Balkonowa:** Wodoszczelna puszka bazowa IP68. Do niej podłączona jest na stałe duża antena i uchwyt na solar.
-3. **Procedura ewakuacji w teren:**
-   * Odłączasz wtyczkę solara.
-   * Odkręcasz przewód dużej anteny balkonowej od SMA.
-   * Wyjmujesz moduł wewnętrzny z koszyka.
-   * Wkręcasz małą antenę przenośną w złącze SMA.
-   * Wyłączasz Wi-Fi w aplikacji Meshtastic (zostaje sam BLE i LoRa), by oszczędzać prąd procesora ESP32S3 w terenie.
+**Seeed Studio XIAO nRF52840**
+
+- Procesor: Nordic nRF52840, ARM Cortex‑M4 32‑bit @ 64 MHz
+- Pamięć: 1 MB Flash / 256 KB RAM (+ 2 MB QSPI Flash)
+- Łączność: Bluetooth 5.0 (BLE), NFC
+- Deep Sleep: rzędu kilku µA (bardzo niskie zużycie)
+- Interfejsy: GPIO, I²C, SPI, UART
+- Wymiary: 21 × 17.5 mm
+
+### 📻 2. Moduł radiowy LoRa (oba nody)
+
+**Wio‑SX1262 LoRa Kit (dla XIAO)**
+
+- Chip: Semtech SX1262
+- Pasmo: 868 MHz (EU868)
+- Moc TX: do +22 dBm
+- Czułość RX: ok. −137 dBm (SF12)
+- Interfejs: SPI + linie sterujące (CS, RST, DIO1)
+- Złącze anteny: u.FL (IPEX) → SMA (pigtail)
+
+### 🛰️ 3. Moduł GPS (Tylko Node 1 – Mobilny)
+
+**GNSS Quectel L76K add‑on for XIAO**
+
+- Multi‑GNSS: GPS, GLONASS, BDS, QZSS
+- Komunikacja: I²C (możliwy UART)
+- Cold Start: < 30 s, Hot Start: < 2 s
+- Wbudowana antena ceramiczna (patch) – wymaga „widoku nieba” w obudowie
+
+### ⚡ 4. Zasilanie – moduł ładowania
+
+**Moduł BQ25185 USB/DC/Solar Charger z buckiem 3.3 V**
+
+- Wejścia:
+  - USB 5 V – serwis / ładowanie awaryjne
+  - Solar/DC: panel 6 V, 3–10 W
+- Bateria:
+  - 1S Li‑ion/Li‑Po 3.0–4.2 V, prąd ładowania do ok. 1 A
+- Funkcje:
+  - Power‑path: jednoczesne zasilanie systemu i ładowanie baterii
+  - Tryb solar: dostosowanie do paneli słonecznych
+  - Buck 3.3 V: zasilanie logiki (XIAO + LoRa (+ GPS w nodzie mobilnym))
+
+### 🔋 5. Bateria i Panel Solarny
+
+**Node 1 – Mobilny**
+
+- Bateria: Li‑Po 1S 3.7 V, ok. **4000 mAh** z PCM (płaska saszetka)
+- Panel solarny:
+  - 6 V, 3–5 W, **odpinany** (złączka na obudowie)
+
+**Node 2 – Repeater 24/7**
+
+- Bateria: Li‑Po 1S 3.7 V, ok. **4000 mAh** z PCM
+- Panel solarny:
+  - 6 V, **5–10 W** (min. 5 W jako sensowne minimum, 10 W dla dużego zapasu zimą)
+
+### 🔐 6. Zabezpieczenia i okablowanie (oba nody)
+
+- Bezpiecznik **PPTC 1–1.5 A** na plusie baterii (resetowalny)
+- Dioda/transil **TVS 6–7 V** równolegle na wejściu z panelu (VIN–GND)
+- Złącza 2‑pin (JST/ARK) dla baterii i panelu
+- Przewody silikonowe 22–24 AWG
+- Obudowa IP65/IP66 (jasna, ABS/PC) + przepusty kablowe
 
 ---
 
-## 🛠️ Schemat Połączeń (Lutowanie)
-Zarówno nRF52840 jak i ESP32-S3 z serii XIAO mają **identyczny układ pinów**. Lutujesz dokładnie tak samo dla obu nodów.
+## 🎒 NODE 1 – „Tank” (Mobilny nRF52840 + GPS + Solar)
 
-### 1. Zasilanie (Moduł BQ25185)
-| Moduł BQ25185 | Miejsce docelowe | Uwagi |
-| :--- | :--- | :--- |
-| **VIN (+)** | Czerwony kabel Panelu Solarnego | Przez zewnętrzne gniazdo |
-| **GND (-)** | Czarny kabel Panelu Solarnego | Przez zewnętrzne gniazdo |
-| **BAT (+)** | Czerwony kabel Li-Po 4000mAh | Gniazdo dedykowane na module |
-| **BAT (-)** | Czarny kabel Li-Po 4000mAh | Gniazdo dedykowane na module |
-| **OUT (lub SYS)** | Płytka XIAO: Pin **[5V]** | Zasila całą płytkę główną |
-| **GND** | Płytka XIAO: Pin **[GND]** | Zamyka obwód zasilania XIAO |
+**Rola:** mobilny tracker / klient MeshCore/Meshtastic z GPS, zasilany z Li‑Po 4000 mAh i małego solara, bez ekranu.
 
-### 2. Magistrala I2C (Współdzielona)
-| Peryferia (OLED + GPS L76K) | Pin na Płytce XIAO | Konfiguracja Meshtastic |
-| :--- | :--- | :--- |
-| **VCC** / VIN (oba moduły) | Pin **[3V3]** | Wyjście 3.3V z XIAO |
-| **GND** (oba moduły) | Pin **[GND]** | Wspólna masa |
-| **SDA** (OLED) + **RX/SDA** (GPS) | Pin **[D4]** | I2C: SDA = 4 |
-| **SCL** (OLED) + **TX/SCL** (GPS) | Pin **[D5]** | I2C: SCL = 5 |
+### Hardware Node 1 – podsumowanie
 
-### 3. Magistrala SPI (Moduł LoRa SX1262)
-*(Jeśli lutujesz przewodami, a nie nakładasz Wio-SX1262 jako Shield)*
+- 1× XIAO nRF52840
+- 1× Wio‑SX1262 LoRa Kit (dla XIAO)
+- 1× GNSS Quectel L76K (I²C)
+- 1× BQ25185 USB/DC/Solar + buck 3.3 V
+- 1× Li‑Po 1S 3.7 V ~4000 mAh z PCM
+- 1× Panel 6 V 3–5 W (odpinany)
+- 1× Antena mobilna 868 MHz (SMA, np. Gizont/Moxon)
+- 1× PPTC 1–1.5 A + 1× TVS 6–7 V
 
-| Moduł LoRa SX1262 | Pin na Płytce XIAO |
-| :--- | :--- |
-| **3V3** (VCC) | Pin **[3V3]** |
-| **GND** | Pin **[GND]** |
-| **SCK** | Pin **[D8]** |
-| **MISO** | Pin **[D9]** |
-| **MOSI** | Pin **[D10]** |
-| **NSS / CS** | Pin **[D3]** |
-| **DIO1 / IRQ** | Pin **[D1]** |
-| **RST / RESET** | Pin **[D0]** |
-
----
-
-## 💡 Porady dla Terenowego Operatora LoRa (Zasięg do 2km+)
-Aby fizycznie zagwarantować sobie komunikację między węzłami na odległości powyżej 2 kilometrów (i więcej) przy częstotliwości 868 MHz:
-1. **Zysk Antenowy:** Odrzuć małe 3-centymetrowe "gumowe kaczki" dołączane czasami w gratisie. Kup oryginalne anteny strojone na 868MHz (np. Moxon lub baciki od Gizont 15-20cm).
-2. **LoS (Line of Sight):** Upewnij się, że obudowa zamocowana jest wysoko (np. górny karabińczyk plecaka). Ciało ludzkie tłumi fale radiowe. Antena musi wystawać ponad ramię.
-3. **Ustawienia Sieci:** W terenie silnie zalesionym rozważ zmianę w Meshtastic konfiguracji *Modem Preset* na **Long Range - Slow** (Lepsza penetracja kosztem szybkości wiadomości).
-
-##  Schemat tank
-```mermaid
-graph TD
-    classDef pwr fill:#ffe6e6,stroke:#cc0000,stroke-width:2px,color:#000;
-    classDef mcu fill:#e6f3ff,stroke:#0066cc,stroke-width:2px,color:#000;
-    classDef per fill:#e6ffe6,stroke:#009933,stroke-width:2px,color:#000;
-    classDef ant fill:#fff3e6,stroke:#e68a00,stroke-width:2px,color:#000;
-
-    SOLAR[☀️ Odpinany Panel Solarny]:::pwr
-    BATT[🔋 Bateria Li-Po 4000mAh]:::pwr
-    BQ[⚡ Moduł Zasilania BQ25185]:::pwr
-    XIAO[🧠 Płytka XIAO nRF52840 <br/> Tylko BLE - Ultra Low Power]:::mcu
-    OLED[📺 Ekran OLED 0.96]:::per
-    GPS[🛰️ Moduł GPS L76K]:::per
-    LORA[📻 Moduł LoRa SX1262]:::per
-    ANT[📡 Krótka Antena Mobilna <br/> SMA: Gizont / Moxon]:::ant
-
-    %% Zasilanie mobilne
-    SOLAR -. "Szybkozłączka na zewnątrz" .-> BQ
-    BATT -- "Stałe połączenie (BAT)" --- BQ
-    BQ -- "5V (SYS) / GND" --> XIAO
-
-    %% Peryferia stałe
-    XIAO -- "Magistrala I2C (3.3V, D4, D5)" --> OLED
-    XIAO -- "Magistrala I2C (3.3V, D4, D5)" --> GPS
-    XIAO -- "Magistrala SPI (3.3V, D8, D9, D10) <br> + D0, D1, D3" --> LORA
-
-    %% Układ radiowy
-    LORA -- "Pigtail u.FL -> SMA" --> ANT
-```
-## Schemat Transformer
+### Node 1 – schemat blokowy (Mermaid)
 
 ```mermaid
-graph TD
-    classDef pwr fill:#ffe6e6,stroke:#cc0000,stroke-width:2px,color:#000;
-    classDef mcu fill:#e6f3ff,stroke:#0066cc,stroke-width:2px,color:#000;
-    classDef per fill:#e6ffe6,stroke:#009933,stroke-width:2px,color:#000;
-    classDef ant fill:#fff3e6,stroke:#e68a00,stroke-width:2px,color:#000;
-    classDef box fill:#f9f9f9,stroke:#666,stroke-width:2px,stroke-dasharray: 5 5,color:#000;
+flowchart TD
 
-    %% Zewnętrzna infrastruktura balkonowa
-    SOLAR[☀️ Panel Solarny na Balkonie]:::pwr
-    ANT_BALK[📡 Duża Antena Balkonowa <br/> Włókno szklane 868MHz]:::ant
-    ANT_MOB[📡 Zapasowa Antena Mobilna <br/> Z puszki ewakuacyjnej]:::ant
+  %% Źródła energii
+  SOLAR[Panel 6V 3-5W (odpinany)]
+  USB[USB-C (serwis / ładowanie)]
 
-    subgraph "Szczelny Moduł Wewnętrzny (Wyciągany)"
-        BATT[🔋 Bateria Li-Po 4000mAh]:::pwr
-        BQ[⚡ Moduł Zasilania BQ25185]:::pwr
-        XIAO[🧠 Płytka XIAO ESP32-S3 <br/> Wi-Fi / MQTT / BLE]:::mcu
-        OLED[📺 Ekran OLED 0.96]:::per
-        GPS[🛰️ Moduł GPS L76K]:::per
-        LORA[📻 Moduł LoRa SX1262]:::per
-        SMA[Złącze SMA na obudowie]:::ant
-        DC[Złącze DC / JST na obudowie]:::pwr
-    end
+  %% Moduł ładowarki + 3V3
+  subgraph CHG[Moduł BQ25185 USB/DC/Solar + buck 3V3]
+    VIN[VIN / SOLAR+]
+    VUSB[VIN_USB]
+    BATTp[BATT+]
+    BATTm[BATT- / GND]
+    SYS3V3[SYS / 3V3 OUT]
+    GND[SYS GND]
+  end
 
-    %% Podłączenie zasilania
-    SOLAR -. "Odłączany kabel (Tryb Teren - Odpięty)" .-> DC
-    DC --> BQ
-    BATT -- "Stałe połączenie (BAT)" --- BQ
-    BQ -- "5V (SYS) / GND" --> XIAO
+  %% Bateria
+  subgraph BAT[LiPo 1S 3V7 ~4000mAh z PCM]
+    Bp[Bateria +]
+    Bm[Bateria -]
+  end
 
-    %% Peryferia wewnątrz puszki
-    XIAO -- "Magistrala I2C (3.3V, D4, D5)" --> OLED
-    XIAO -- "Magistrala I2C (3.3V, D4, D5)" --> GPS
-    XIAO -- "Magistrala SPI (3.3V, D8, D9, D10) <br> + D0, D1, D3" --> LORA
+  %% Zabezpieczenia
+  FUSE[PPTC 1-1A5<br/>na plusie baterii]
+  TVS[TVS 6-7V<br/>na wejściu PV]
 
-    %% System antenowy (transformacja)
-    LORA -- "Pigtail u.FL -> SMA" --> SMA
-    SMA == "Na co dzień (Wkręcona)" === ANT_BALK
-    SMA -. "Ewakuacja (Zamiana)" .-> ANT_MOB
+  %% Node mobilny
+  subgraph NODE[Node mobilny MeshCore/Meshtastic]
+    XIAO[XIAO nRF52840<br/>3V3/GND, BLE + LoRa]
+    LORA[Wio-SX1262 LoRa<br/>SPI 3V3/GND]
+    GPS[L76K GNSS<br/>I2C 3V3/GND]
+  end
+
+  %% Wejścia zasilania
+  SOLAR -->|+| VIN
+  SOLAR -->|−| GND
+  USB -->|+| VUSB
+  USB -->|−| GND
+
+  %% TVS równolegle na wejściu PV
+  TVS -->|+| VIN
+  TVS -->|−| GND
+
+  %% Bateria + PPTC
+  Bp --> FUSE --> BATTp
+  Bm --> BATTm
+
+  %% Wyjście 3V3 do noda
+  SYS3V3 --> XIAO
+  SYS3V3 --> LORA
+  SYS3V3 --> GPS
+  GND --> XIAO
+  GND --> LORA
+  GND --> GPS
+
+  %% Logika
+  XIAO --- LORA
+  XIAO --- GPS
 ```
 
-## Schemat detale
+### Node 1 – kluczowe połączenia pinów (skrót)
+
+- BQ25185:
+  - VIN/SOLAR+ ↔ plus panelu
+  - GND ↔ minus panelu
+  - VIN_USB ↔ USB 5 V (opcjonalnie)
+  - BATT+ ↔ plus baterii przez PPTC
+  - BATT− ↔ minus baterii
+  - SYS/3V3 ↔ 3V3 XIAO + VCC Wio + VCC GPS
+  - GND ↔ GND XIAO + GND Wio + GND GPS
+
+- XIAO ↔ Wio‑SX1262: SPI + CS/DIO1/RST (jak w twoim oryginalnym schemacie)
+- XIAO ↔ L76K: I²C (np. D4 = SDA, D5 = SCL)
+
+---
+
+## 🏔 NODE 2 – Repeater 24/7 (nRF52840 + LoRa + Solar)
+
+**Rola:** stały, stacjonarny repeater MeshCore/Meshtastic, zero GPS/ekranu/Wi‑Fi/GSM.
+
+### Hardware Node 2 – podsumowanie
+
+- 1× XIAO nRF52840
+- 1× Wio‑SX1262 LoRa Kit (dla XIAO)
+- 1× BQ25185 USB/DC/Solar + buck 3.3 V
+- 1× Li‑Po 1S 3.7 V ~4000 mAh z PCM
+- 1× Panel 6 V **5–10 W** (stały)
+- 1× Duża antena 868 MHz (4–8 dBi, włókno szklane)
+- 1× PPTC 1–1.5 A + 1× TVS 6–7 V
+- Obudowa IP65/IP66, jasna, na maszcie / dachu
+
+### Node 2 – schemat blokowy (Mermaid)
+
 ```mermaid
-graph LR
-    classDef zasilanie fill:#ffe6e6,stroke:#ff0000,stroke-width:2px,color:#000;
-    classDef plytka fill:#e6f3ff,stroke:#0066cc,stroke-width:2px,color:#000;
-    classDef pin5v fill:#ff4757,stroke:#c0392b,color:#fff,font-weight:bold;
-    classDef pingnd fill:#2f3542,stroke:#1e272e,color:#fff,font-weight:bold;
-    classDef pin3v3 fill:#f1c40f,stroke:#f39c12,color:#000,font-weight:bold;
-    classDef pini2c fill:#1e90ff,stroke:#0984e3,color:#fff,font-weight:bold;
-    classDef pinspi fill:#2ed573,stroke:#27ae60,color:#000,font-weight:bold;
+flowchart TD
 
-    subgraph ZASILANIE ["☀️ Zasilanie Zewnętrzne"]
-        S_VCC["+ VCC Solara"]:::pin5v
-        S_GND["- GND Solara"]:::pingnd
-        B_VCC["+ VCC Baterii"]:::pin5v
-        B_GND["- GND Baterii"]:::pingnd
-    end
+  %% Źródła energii
+  SOLAR[Panel 6V 5-10W (stały)]
+  USB[USB-C (serwis / awaryjne ładowanie)]
 
-    subgraph BQ ["⚡ Moduł BQ25185 (Adafruit Breakout)"]
-        BQ_DCIN_P["DCIN (+)"]:::pin5v
-        BQ_DCIN_M["DCIN (-)"]:::pingnd
-        BQ_BATT_P["BATT (+)"]:::pin5v
-        BQ_BATT_M["BATT (-)"]:::pingnd
-        BQ_LOAD_P["LOAD (+)"]:::pin5v
-        BQ_LOAD_M["LOAD (-)"]:::pingnd
-    end
+  %% Moduł ładowarki + 3V3
+  subgraph CHG[Moduł BQ25185 USB/DC/Solar + buck 3V3]
+    VIN[VIN / SOLAR+]
+    VUSB[VIN_USB]
+    BATTp[BATT+]
+    BATTm[BATT- / GND]
+    SYS3V3[SYS / 3V3 OUT]
+    GND[SYS GND]
+  end
 
-    subgraph XIAO ["🧠 Płytka XIAO (nRF52840 / ESP32-S3)"]
-        X_5V["Pin 5V"]:::pin5v
-        X_GND["Pin GND"]:::pingnd
-        X_3V3["Pin 3V3"]:::pin3v3
-        X_D4["Pin D4"]:::pini2c
-        X_D5["Pin D5"]:::pini2c
-        X_D8["Pin D8"]:::pinspi
-        X_D9["Pin D9"]:::pinspi
-        X_D10["Pin D10"]:::pinspi
-        X_D3["Pin D3"]:::pinspi
-        X_D1["Pin D1"]:::pinspi
-        X_D0["Pin D0"]:::pinspi
-    end
+  %% Bateria
+  subgraph BAT[LiPo 1S 3V7 ~4000mAh z PCM]
+    Bp[Bateria +]
+    Bm[Bateria -]
+  end
 
-    subgraph OLED ["📺 Ekran OLED 0.96"]
-        O_VCC["VCC"]:::pin3v3
-        O_GND["GND"]:::pingnd
-        O_SDA["SDA"]:::pini2c
-        O_SCL["SCL"]:::pini2c
-    end
+  %% Zabezpieczenia
+  FUSE[PPTC 1-1A5<br/>na plusie baterii]
+  TVS[TVS 6-7V<br/>na wejściu PV]
 
-    subgraph GPS ["🛰️ GPS Quectel L76K"]
-        G_VCC["VCC"]:::pin3v3
-        G_GND["GND"]:::pingnd
-        G_RX["RX / SDA"]:::pini2c
-        G_TX["TX / SCL"]:::pini2c
-    end
+  %% Repeater
+  subgraph NODE[Repeater MeshCore/Meshtastic 24/7]
+    XIAO[XIAO nRF52840<br/>3V3/GND]
+    LORA[Wio-SX1262 LoRa<br/>SPI 3V3/GND]
+    ANT[Antena 868MHz<br/>wysoko, stała]
+  end
 
-    subgraph LORA ["📻 Wio-SX1262 LoRa"]
-        L_3V3["3V3"]:::pin3v3
-        L_GND["GND"]:::pingnd
-        L_SCK["SCK"]:::pinspi
-        L_MISO["MISO"]:::pinspi
-        L_MOSI["MOSI"]:::pinspi
-        L_NSS["NSS / CS"]:::pinspi
-        L_DIO1["DIO1 / IRQ"]:::pinspi
-        L_RST["RST"]:::pinspi
-    end
+  %% Wejścia zasilania
+  SOLAR -->|+| VIN
+  SOLAR -->|−| GND
+  USB -->|+| VUSB
+  USB -->|−| GND
 
-    %% Etap 1: Zasilanie
-    S_VCC -- Czerwony kabel --> BQ_DCIN_P
-    S_GND -- Czarny kabel --> BQ_DCIN_M
-    B_VCC -- Czerwony kabel --> BQ_BATT_P
-    B_GND -- Czarny kabel --> BQ_BATT_M
-    BQ_LOAD_P -- Mostek zasilania --> X_5V
-    BQ_LOAD_M -- Mostek GND --> X_GND
+  %% TVS równolegle na wejściu PV
+  TVS -->|+| VIN
+  TVS -->|−| GND
 
-    %% Etap 2: Dystrybucja zasilania logicznego 3.3V
-    X_3V3 -- Wspolne 3.3V --> O_VCC
-    X_3V3 -- Wspolne 3.3V --> G_VCC
-    X_3V3 -- Wspolne 3.3V --> L_3V3
-    X_GND -- Wspolna Masa --> O_GND
-    X_GND -- Wspolna Masa --> G_GND
-    X_GND -- Wspolna Masa --> L_GND
+  %% Bateria + PPTC
+  Bp --> FUSE --> BATTp
+  Bm --> BATTm
 
-    %% Etap 3: Magistrala I2C
-    X_D4 -- Linia SDA --> O_SDA
-    X_D4 -- Linia SDA --> G_RX
-    X_D5 -- Linia SCL --> O_SCL
-    X_D5 -- Linia SCL --> G_TX
+  %% Wyjście 3V3
+  SYS3V3 --> XIAO
+  SYS3V3 --> LORA
+  GND --> XIAO
+  GND --> LORA
 
-    %% Etap 4: Magistrala SPI (Tylko LoRa)
-    X_D8 -- Sygnal zegarowy --> L_SCK
-    X_D9 -- Komunikacja IN --> L_MISO
-    X_D10 -- Komunikacja OUT --> L_MOSI
-    X_D3 -- Chip Select --> L_NSS
-    X_D1 -- Przerwanie --> L_DIO1
-    X_D0 -- Reset Ukladu --> L_RST
-
-    %% Pogrubienie kluczowych linii ułatwiających czytanie
-    linkStyle 0,1,2,3,4,5 stroke:#ff4757,stroke-width:2px;
-    linkStyle 6,7,8,9,10,11 stroke:#f39c12,stroke-width:2px;
-    linkStyle 12,13,14,15 stroke:#0984e3,stroke-width:2px;
-    linkStyle 16,17,18,19,20,21 stroke:#27ae60,stroke-width:2px;
+  %% Logika
+  XIAO --- LORA
+  LORA --- ANT
 ```
+
+---
+
+## 🔌 Tabela – kluczowe połączenia zasilania (wspólne dla obu nodów)
+
+| Element          | Pin modułu BQ25185 | Do czego lutujesz                            |
+|------------------|--------------------|----------------------------------------------|
+| Panel +          | VIN / SOLAR+       | Plus panelu 6 V                              |
+| Panel −          | GND                | Minus panelu                                 |
+| USB 5 V +        | VIN_USB            | Plus z gniazda USB‑C (jeśli używasz)        |
+| USB 5 V −        | GND                | Minus USB‑C                                  |
+| Bateria +        | BATT+ (przez PPTC) | Plus baterii 1S → PPTC → BATT+              |
+| Bateria −        | BATT− / GND        | Minus baterii                                |
+| Wyjście 3.3 V    | SYS / 3V3 OUT      | Pin 3V3 XIAO + VCC Wio (+ VCC GPS w Node 1) |
+| Masa systemu     | GND                | GND XIAO + GND Wio (+ GND GPS w Node 1)     |
+| TVS 6–7 V (+)    | VIN / SOLAR+       | Równolegle do wejścia PV                     |
+| TVS 6–7 V (−)    | GND                | Równolegle do wejścia PV                     |
+| PPTC 1–1.5 A     | Na przewodzie BAT+ | Szeregowo między baterią a BATT+            |
+
+---
+
+Masz już wszystko w jednej paczce – opis, hardware, schematy Mermaid i tabelę połączeń, gotowe do wklejenia do repo / notatek. Jeśli chcesz, mogę teraz dopisać sekcję „Firmware i konfiguracja MeshCore/Meshtastic” (role, presety, moc TX) jako kolejny blok markdown, w tym samym stylu.
