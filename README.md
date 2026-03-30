@@ -144,3 +144,76 @@ Aby fizycznie zagwarantować sobie komunikację między węzłami na odległośc
 1. **Zysk Antenowy:** Odrzuć małe 3-centymetrowe "gumowe kaczki" dołączane czasami w gratisie. Kup oryginalne anteny strojone na 868MHz (np. Moxon lub baciki od Gizont 15-20cm).
 2. **LoS (Line of Sight):** Upewnij się, że obudowa zamocowana jest wysoko (np. górny karabińczyk plecaka). Ciało ludzkie tłumi fale radiowe. Antena musi wystawać ponad ramię.
 3. **Ustawienia Sieci:** W terenie silnie zalesionym rozważ zmianę w Meshtastic konfiguracji *Modem Preset* na **Long Range - Slow** (Lepsza penetracja kosztem szybkości wiadomości).
+
+##  Schemat tank
+```mermaid
+graph TD
+    classDef pwr fill:#ffe6e6,stroke:#cc0000,stroke-width:2px,color:#000;
+    classDef mcu fill:#e6f3ff,stroke:#0066cc,stroke-width:2px,color:#000;
+    classDef per fill:#e6ffe6,stroke:#009933,stroke-width:2px,color:#000;
+    classDef ant fill:#fff3e6,stroke:#e68a00,stroke-width:2px,color:#000;
+
+    SOLAR[☀️ Odpinany Panel Solarny]:::pwr
+    BATT[🔋 Bateria Li-Po 4000mAh]:::pwr
+    BQ[⚡ Moduł Zasilania BQ25185]:::pwr
+    XIAO[🧠 Płytka XIAO nRF52840 <br/> Tylko BLE - Ultra Low Power]:::mcu
+    OLED[📺 Ekran OLED 0.96]:::per
+    GPS[🛰️ Moduł GPS L76K]:::per
+    LORA[📻 Moduł LoRa SX1262]:::per
+    ANT[📡 Krótka Antena Mobilna <br/> SMA: Gizont / Moxon]:::ant
+
+    %% Zasilanie mobilne
+    SOLAR -. "Szybkozłączka na zewnątrz" .-> BQ
+    BATT -- "Stałe połączenie (BAT)" --- BQ
+    BQ -- "5V (SYS) / GND" --> XIAO
+
+    %% Peryferia stałe
+    XIAO -- "Magistrala I2C (3.3V, D4, D5)" --> OLED
+    XIAO -- "Magistrala I2C (3.3V, D4, D5)" --> GPS
+    XIAO -- "Magistrala SPI (3.3V, D8, D9, D10) <br> + D0, D1, D3" --> LORA
+
+    %% Układ radiowy
+    LORA -- "Pigtail u.FL -> SMA" --> ANT
+```
+## Schemat Transformer
+
+```mermaid
+graph TD
+    classDef pwr fill:#ffe6e6,stroke:#cc0000,stroke-width:2px,color:#000;
+    classDef mcu fill:#e6f3ff,stroke:#0066cc,stroke-width:2px,color:#000;
+    classDef per fill:#e6ffe6,stroke:#009933,stroke-width:2px,color:#000;
+    classDef ant fill:#fff3e6,stroke:#e68a00,stroke-width:2px,color:#000;
+    classDef box fill:#f9f9f9,stroke:#666,stroke-width:2px,stroke-dasharray: 5 5,color:#000;
+
+    %% Zewnętrzna infrastruktura balkonowa
+    SOLAR[☀️ Panel Solarny na Balkonie]:::pwr
+    ANT_BALK[📡 Duża Antena Balkonowa <br/> Włókno szklane 868MHz]:::ant
+    ANT_MOB[📡 Zapasowa Antena Mobilna <br/> Z puszki ewakuacyjnej]:::ant
+
+    subgraph "Szczelny Moduł Wewnętrzny (Wyciągany)"
+        BATT[🔋 Bateria Li-Po 4000mAh]:::pwr
+        BQ[⚡ Moduł Zasilania BQ25185]:::pwr
+        XIAO[🧠 Płytka XIAO ESP32-S3 <br/> Wi-Fi / MQTT / BLE]:::mcu
+        OLED[📺 Ekran OLED 0.96]:::per
+        GPS[🛰️ Moduł GPS L76K]:::per
+        LORA[📻 Moduł LoRa SX1262]:::per
+        SMA[Złącze SMA na obudowie]:::ant
+        DC[Złącze DC / JST na obudowie]:::pwr
+    end
+
+    %% Podłączenie zasilania
+    SOLAR -. "Odłączany kabel (Tryb Teren - Odpięty)" .-> DC
+    DC --> BQ
+    BATT -- "Stałe połączenie (BAT)" --- BQ
+    BQ -- "5V (SYS) / GND" --> XIAO
+
+    %% Peryferia wewnątrz puszki
+    XIAO -- "Magistrala I2C (3.3V, D4, D5)" --> OLED
+    XIAO -- "Magistrala I2C (3.3V, D4, D5)" --> GPS
+    XIAO -- "Magistrala SPI (3.3V, D8, D9, D10) <br> + D0, D1, D3" --> LORA
+
+    %% System antenowy (transformacja)
+    LORA -- "Pigtail u.FL -> SMA" --> SMA
+    SMA == "Na co dzień (Wkręcona)" === ANT_BALK
+    SMA -. "Ewakuacja (Zamiana)" .-> ANT_MOB
+```
