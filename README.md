@@ -7,7 +7,7 @@ Projekt zakłada budowę **dwóch węzłów** sieci MeshCore/Meshtastic opartych
 1. **Node 1 – „Tank” (Mobilny):**
    - Węzeł noszony/terenowy oparty na **XIAO nRF52840**.
    - Ma **GPS L76K** do trackingu.
-   - Zasilany z baterii Li‑Po 1S ~4000 mAh z możliwością ładowania z **małego, odpinanego panelu solarnego**.
+   - **Zasilany z baterii Li‑Po 1S ~4000 mAh i odpinanego panelu 6 V 3–5 W przez moduł BQ25185 z buckiem 3.3 V.**
    - Bez ekranu, bez Wi‑Fi/GSM, nastawiony na długi czas pracy (BLE + LoRa).
 
 2. **Node 2 – „Repeater” (Stacjonarny 24/7):**
