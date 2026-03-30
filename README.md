@@ -110,8 +110,8 @@ Projekt zakłada budowę **dwóch węzłów** sieci MeshCore/Meshtastic opartych
 flowchart TD
 
   %% Źródła energii
-  SOLAR[Panel 6V 3-5W (odpinany)]
-  USB[USB-C (serwis / ładowanie)]
+  SOLAR[Panel 6V 3-5W - odpinany]
+  USB[USB-C serwis]
 
   %% Moduł ładowarki + 3V3
   subgraph CHG[Moduł BQ25185 USB/DC/Solar + buck 3V3]
@@ -124,31 +124,31 @@ flowchart TD
   end
 
   %% Bateria
-  subgraph BAT[LiPo 1S 3V7 ~4000mAh z PCM]
+  subgraph BAT[LiPo 1S 3V7 4000mAh z PCM]
     Bp[Bateria +]
     Bm[Bateria -]
   end
 
   %% Zabezpieczenia
-  FUSE[PPTC 1-1A5<br/>na plusie baterii]
-  TVS[TVS 6-7V<br/>na wejściu PV]
+  FUSE[PPTC 1-1A5 na plusie baterii]
+  TVS[TVS 6-7V na wejściu PV]
 
   %% Node mobilny
-  subgraph NODE[Node mobilny MeshCore/Meshtastic]
-    XIAO[XIAO nRF52840<br/>3V3/GND, BLE + LoRa]
-    LORA[Wio-SX1262 LoRa<br/>SPI 3V3/GND]
-    GPS[L76K GNSS<br/>I2C 3V3/GND]
+  subgraph NODE[Node mobilny MeshCore / Meshtastic]
+    XIAO[XIAO nRF52840 3V3/GND]
+    LORA[Wio-SX1262 LoRa SPI]
+    GPS[L76K GNSS I2C]
   end
 
   %% Wejścia zasilania
-  SOLAR -->|+| VIN
-  SOLAR -->|−| GND
-  USB -->|+| VUSB
-  USB -->|−| GND
+  SOLAR --> VIN
+  SOLAR --> GND
+  USB --> VUSB
+  USB --> GND
 
   %% TVS równolegle na wejściu PV
-  TVS -->|+| VIN
-  TVS -->|−| GND
+  TVS --> VIN
+  TVS --> GND
 
   %% Bateria + PPTC
   Bp --> FUSE --> BATTp
@@ -203,52 +203,52 @@ flowchart TD
 ```mermaid
 flowchart TD
 
-  %% Źródła energii
-  SOLAR[Panel 6V 5-10W (stały)]
-  USB[USB-C (serwis / awaryjne ładowanie)]
+  %% Zrodla energii
+  SOLAR[Panel 6V 5-10W staly]
+  USB[USB-C serwis]
 
-  %% Moduł ładowarki + 3V3
-  subgraph CHG[Moduł BQ25185 USB/DC/Solar + buck 3V3]
-    VIN[VIN / SOLAR+]
+  %% Modul ladowarki + 3V3
+  subgraph CHG[Modul BQ25185 USB DC Solar buck 3V3]
+    VIN[VIN SOLAR+]
     VUSB[VIN_USB]
     BATTp[BATT+]
-    BATTm[BATT- / GND]
-    SYS3V3[SYS / 3V3 OUT]
+    BATTm[BATT- GND]
+    SYS3V3[SYS 3V3 OUT]
     GND[SYS GND]
   end
 
   %% Bateria
-  subgraph BAT[LiPo 1S 3V7 ~4000mAh z PCM]
+  subgraph BAT[LiPo 1S 3V7 4000mAh PCM]
     Bp[Bateria +]
     Bm[Bateria -]
   end
 
   %% Zabezpieczenia
-  FUSE[PPTC 1-1A5<br/>na plusie baterii]
-  TVS[TVS 6-7V<br/>na wejściu PV]
+  FUSE[PPTC 1-1A5 na plusie baterii]
+  TVS[TVS 6-7V na wejsciu PV]
 
   %% Repeater
-  subgraph NODE[Repeater MeshCore/Meshtastic 24/7]
-    XIAO[XIAO nRF52840<br/>3V3/GND]
-    LORA[Wio-SX1262 LoRa<br/>SPI 3V3/GND]
-    ANT[Antena 868MHz<br/>wysoko, stała]
+  subgraph NODE[Repeater MeshCore Meshtastic 24 7]
+    XIAO[XIAO nRF52840 3V3 GND]
+    LORA[Wio-SX1262 LoRa SPI]
+    ANT[Antena 868MHz stala]
   end
 
-  %% Wejścia zasilania
-  SOLAR -->|+| VIN
-  SOLAR -->|−| GND
-  USB -->|+| VUSB
-  USB -->|−| GND
+  %% Wejscia zasilania
+  SOLAR --> VIN
+  SOLAR --> GND
+  USB --> VUSB
+  USB --> GND
 
-  %% TVS równolegle na wejściu PV
-  TVS -->|+| VIN
-  TVS -->|−| GND
+  %% TVS rownolegle na wejsciu PV
+  TVS --> VIN
+  TVS --> GND
 
   %% Bateria + PPTC
   Bp --> FUSE --> BATTp
   Bm --> BATTm
 
-  %% Wyjście 3V3
+  %% Wyjscie 3V3
   SYS3V3 --> XIAO
   SYS3V3 --> LORA
   GND --> XIAO
