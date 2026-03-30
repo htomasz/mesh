@@ -236,13 +236,13 @@ graph LR
         B_GND["- GND Baterii"]:::pingnd
     end
 
-    subgraph BQ ["⚡ Moduł BQ25185"]
-        BQ_VIN["VIN"]:::pin5v
-        BQ_GND1["GND"]:::pingnd
-        BQ_BAT_P["BAT+"]:::pin5v
-        BQ_BAT_M["BAT-"]:::pingnd
-        BQ_OUT["OUT / SYS"]:::pin5v
-        BQ_GND2["GND"]:::pingnd
+    subgraph BQ ["⚡ Moduł BQ25185 (Adafruit Breakout)"]
+        BQ_DCIN_P["DCIN (+)"]:::pin5v
+        BQ_DCIN_M["DCIN (-)"]:::pingnd
+        BQ_BATT_P["BATT (+)"]:::pin5v
+        BQ_BATT_M["BATT (-)"]:::pingnd
+        BQ_LOAD_P["LOAD (+)"]:::pin5v
+        BQ_LOAD_M["LOAD (-)"]:::pingnd
     end
 
     subgraph XIAO ["🧠 Płytka XIAO (nRF52840 / ESP32-S3)"]
@@ -285,12 +285,12 @@ graph LR
     end
 
     %% Etap 1: Zasilanie
-    S_VCC -- Czerwony kabel --> BQ_VIN
-    S_GND -- Czarny kabel --> BQ_GND1
-    B_VCC -- Czerwony kabel --> BQ_BAT_P
-    B_GND -- Czarny kabel --> BQ_BAT_M
-    BQ_OUT -- Mostek 5V --> X_5V
-    BQ_GND2 -- Mostek GND --> X_GND
+    S_VCC -- Czerwony kabel --> BQ_DCIN_P
+    S_GND -- Czarny kabel --> BQ_DCIN_M
+    B_VCC -- Czerwony kabel --> BQ_BATT_P
+    B_GND -- Czarny kabel --> BQ_BATT_M
+    BQ_LOAD_P -- Mostek zasilania --> X_5V
+    BQ_LOAD_M -- Mostek GND --> X_GND
 
     %% Etap 2: Dystrybucja zasilania logicznego 3.3V
     X_3V3 -- Wspolne 3.3V --> O_VCC
