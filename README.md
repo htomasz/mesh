@@ -217,3 +217,106 @@ graph TD
     SMA == "Na co dzień (Wkręcona)" === ANT_BALK
     SMA -. "Ewakuacja (Zamiana)" .-> ANT_MOB
 ```
+
+## Schemat detale
+```mermaid
+graph LR
+    classDef zasilanie fill:#ffe6e6,stroke:#ff0000,stroke-width:2px,color:#000;
+    classDef plytka fill:#e6f3ff,stroke:#0066cc,stroke-width:2px,color:#000;
+    classDef pin5v fill:#ff4757,stroke:#c0392b,color:#fff,font-weight:bold;
+    classDef pingnd fill:#2f3542,stroke:#1e272e,color:#fff,font-weight:bold;
+    classDef pin3v3 fill:#f1c40f,stroke:#f39c12,color:#000,font-weight:bold;
+    classDef pini2c fill:#1e90ff,stroke:#0984e3,color:#fff,font-weight:bold;
+    classDef pinspi fill:#2ed573,stroke:#27ae60,color:#000,font-weight:bold;
+
+    subgraph ZASILANIE ["☀️ Zasilanie Zewnętrzne"]
+        S_VCC["+ VCC Solara"]:::pin5v
+        S_GND["- GND Solara"]:::pingnd
+        B_VCC["+ VCC Baterii"]:::pin5v
+        B_GND["- GND Baterii"]:::pingnd
+    end
+
+    subgraph BQ ["⚡ Moduł BQ25185"]
+        BQ_VIN["VIN"]:::pin5v
+        BQ_GND1["GND"]:::pingnd
+        BQ_BAT_P["BAT+"]:::pin5v
+        BQ_BAT_M["BAT-"]:::pingnd
+        BQ_OUT["OUT / SYS"]:::pin5v
+        BQ_GND2["GND"]:::pingnd
+    end
+
+    subgraph XIAO ["🧠 Płytka XIAO (nRF52840 / ESP32-S3)"]
+        X_5V["Pin 5V"]:::pin5v
+        X_GND["Pin GND"]:::pingnd
+        X_3V3["Pin 3V3"]:::pin3v3
+        X_D4["Pin D4"]:::pini2c
+        X_D5["Pin D5"]:::pini2c
+        X_D8["Pin D8"]:::pinspi
+        X_D9["Pin D9"]:::pinspi
+        X_D10["Pin D10"]:::pinspi
+        X_D3["Pin D3"]:::pinspi
+        X_D1["Pin D1"]:::pinspi
+        X_D0["Pin D0"]:::pinspi
+    end
+
+    subgraph OLED ["📺 Ekran OLED 0.96"]
+        O_VCC["VCC"]:::pin3v3
+        O_GND["GND"]:::pingnd
+        O_SDA["SDA"]:::pini2c
+        O_SCL["SCL"]:::pini2c
+    end
+
+    subgraph GPS ["🛰️ GPS Quectel L76K"]
+        G_VCC["VCC"]:::pin3v3
+        G_GND["GND"]:::pingnd
+        G_RX["RX / SDA"]:::pini2c
+        G_TX["TX / SCL"]:::pini2c
+    end
+
+    subgraph LORA ["📻 Wio-SX1262 LoRa"]
+        L_3V3["3V3"]:::pin3v3
+        L_GND["GND"]:::pingnd
+        L_SCK["SCK"]:::pinspi
+        L_MISO["MISO"]:::pinspi
+        L_MOSI["MOSI"]:::pinspi
+        L_NSS["NSS / CS"]:::pinspi
+        L_DIO1["DIO1 / IRQ"]:::pinspi
+        L_RST["RST"]:::pinspi
+    end
+
+    %% Etap 1: Zasilanie
+    S_VCC -- Czerwony kabel --> BQ_VIN
+    S_GND -- Czarny kabel --> BQ_GND1
+    B_VCC -- Czerwony kabel --> BQ_BAT_P
+    B_GND -- Czarny kabel --> BQ_BAT_M
+    BQ_OUT -- Mostek 5V --> X_5V
+    BQ_GND2 -- Mostek GND --> X_GND
+
+    %% Etap 2: Dystrybucja zasilania logicznego 3.3V
+    X_3V3 -- Wspolne 3.3V --> O_VCC
+    X_3V3 -- Wspolne 3.3V --> G_VCC
+    X_3V3 -- Wspolne 3.3V --> L_3V3
+    X_GND -- Wspolna Masa --> O_GND
+    X_GND -- Wspolna Masa --> G_GND
+    X_GND -- Wspolna Masa --> L_GND
+
+    %% Etap 3: Magistrala I2C
+    X_D4 -- Linia SDA --> O_SDA
+    X_D4 -- Linia SDA --> G_RX
+    X_D5 -- Linia SCL --> O_SCL
+    X_D5 -- Linia SCL --> G_TX
+
+    %% Etap 4: Magistrala SPI (Tylko LoRa)
+    X_D8 -- Sygnal zegarowy --> L_SCK
+    X_D9 -- Komunikacja IN --> L_MISO
+    X_D10 -- Komunikacja OUT --> L_MOSI
+    X_D3 -- Chip Select --> L_NSS
+    X_D1 -- Przerwanie --> L_DIO1
+    X_D0 -- Reset Ukladu --> L_RST
+
+    %% Pogrubienie kluczowych linii ułatwiających czytanie
+    linkStyle 0,1,2,3,4,5 stroke:#ff4757,stroke-width:2px;
+    linkStyle 6,7,8,9,10,11 stroke:#f39c12,stroke-width:2px;
+    linkStyle 12,13,14,15 stroke:#0984e3,stroke-width:2px;
+    linkStyle 16,17,18,19,20,21 stroke:#27ae60,stroke-width:2px;
+```
