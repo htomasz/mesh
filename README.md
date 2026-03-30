@@ -278,5 +278,3 @@ flowchart TD
 | PPTC 1–1.5 A     | Na przewodzie BAT+ | Szeregowo między baterią a BATT+            |
 
 ---
-
-Masz już wszystko w jednej paczce – opis, hardware, schematy Mermaid i tabelę połączeń, gotowe do wklejenia do repo / notatek. Jeśli chcesz, mogę teraz dopisać sekcję „Firmware i konfiguracja MeshCore/Meshtastic” (role, presety, moc TX) jako kolejny blok markdown, w tym samym stylu.
