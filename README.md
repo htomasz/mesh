@@ -278,3 +278,21 @@ flowchart TD
 | PPTC 1–1.5 A     | Na przewodzie BAT+ | Szeregowo między baterią a BATT+            |
 
 ---
+
+
+```mermaid
+flowchart LR
+    SOL[Panel solarny 5–7V]
+    BAT[Akumulator Li-Po 3.7V 4000mAh]
+    CHG[BQ25185 USB/DC/Solar Charger]
+    XIAO[XIAO nRF52840 & Wio-SX1262]
+
+    SOL -- "+ (V+)" --> CHG
+    SOL -- "- (GND)" --> CHG
+
+    BAT -- "+" --> CHG
+    BAT -- "-" --> CHG
+
+    CHG -- "3V3" --> XIAO
+    CHG -- "GND" --> XIAO
+```
